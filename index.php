@@ -53,15 +53,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BBS｜home</title>
     <link rel="stylesheet" href="style.css">
-    <!-- Google tag (gtag.js) -->
-    <!--<script async src="https://www.googletagmanager.com/gtag/js?id=G-BN5KGMB0GN"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-        function gtag() { dataLayer.push(arguments); }
-        gtag('js', new Date());
-
-        gtag('config', 'G-BN5KGMB0GN');
-    </script>-->
 </head>
 
 <body id="dark-mode">
@@ -179,61 +170,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ?>
         </ul>
         <h2>新しいスレッドを立てる</h2>
-        <form action="index.php" method="POST">
-            <label for="thread_name">スレッド名:</label>
-            <input type="text" id="thread_name" name="thread_name" required><br>
-            <label for="comment">コメント:</label>
-            <textarea id="comment" name="comment" rows="1.5" required></textarea><br>
-            <input type="submit" value="作成"><a href="/thread-rule.html">スレッドを立てる前に</a>
-        </form>
-    </main>
+<form action="index.php" method="POST">
+    <label for="thread_name">スレッド名:</label>
+    <input type="text" id="thread_name" name="thread_name" required><br>
+    <label for="comment">コメント:</label>
+    <textarea id="comment" name="comment" rows="1.5" required></textarea><br>
+    <input type="submit" value="作成"><a href="/thread-rule.html">スレッドを立てる前に</a>
+</form>
 
-    <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        const popupContainer = document.querySelector(".popup-container");
-        const cookieName = "popupShown";
+<!-- WebSocket !-->
+<script>
+    const socket = new WebSocket('ws://your-websocket-server-url'); // WebSocketサーバーのURLに置き換える
 
-        // Cookieがすでに保存されている場合はポップアップを表示しない
-        if (!getCookie(cookieName)) {
-            setTimeout(() => {
-                popupContainer.style.top = "8px"; // 上から表示するために位置を0に設定
-                setTimeout(() => {
-                    closePopup();
-                }, 2000); // 2秒後にclosePopup関数を実行
-
-                // Cookieに情報を保存して再訪時にポップアップを表示しないようにする
-                setCookie(cookieName, "true", 1); // 1日間有効なCookieを設定
-            }, 900); // 0.9秒後にポップアップ表示の処理を実行
-        }
+    // WebSocket接続が確立されたときの処理
+    socket.addEventListener('open', (event) => {
+        console.log('WebSocket接続が確立されました。');
     });
 
-    const popupContainer = document.querySelector(".popup-container");
-    function closePopup() {
-        popupContainer.classList.add("closing"); // クラスを追加
-        setTimeout(() => {
-            popupContainer.classList.remove("closing"); // クラスを削除
-            popupContainer.style.top = "-100%"; // 画面外に戻すために位置を-100%に設定
-        }, 2000); // 2秒後に実行
-    }
+    socket.addEventListener('message', (event) => {
+    // 受信したメッセージを処理する
+    console.log('受信したメッセージ:', event.data);
 
-    // Cookieを設定する関数
-    function setCookie(name, value, days) {
-        const expires = new Date();
-        expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-        document.cookie = name + "=" + value + ";expires=" + expires.toUTCString();
-    }
+    // メッセージを表示するための要素を作成
+    const messageContainer = document.createElement('div');
+    messageContainer.textContent = event.data;
 
-    // Cookieを取得する関数
-    function getCookie(name) {
-        const cookieArr = document.cookie.split(";");
-        for (let i = 0; i < cookieArr.length; i++) {
-            const cookiePair = cookieArr[i].split("=");
-            if (name === cookiePair[0].trim()) {
-                return decodeURIComponent(cookiePair[1]);
+    // メッセージ一覧に追加
+    const messageList = document.getElementById('messageList');
+    messageList.appendChild(messageContainer);
+});
+
+    // スレッド作成フォームの送信時の処理
+    document.querySelector('form').addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        // フォームの内容を取得
+        const threadName = document.getElementById('thread_name').value;
+        const comment = document.getElementById('comment').value;
+
+        // WebSocketを介して新しいスレッドが作成されたことを通知
+        const message = `新しいスレッドが作成されました: ${threadName}`;
+        socket.send(message);
+
+        // フォームの内容をサーバーに送信する処理を追加
+        const formData = new FormData();
+        formData.append('thread_name', threadName);
+        formData.append('comment', comment);
+
+        // XMLHttpRequestを使用してフォームの内容をサーバーに送信
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'index.php', true);
+        xhr.onload = function () {
+            if (xhr.status === 200) {
+                // レスポンスが正常に受信されたときの処理
+                console.log('フォーム送信が成功しました。');
+            } else {
+                // レスポンスがエラーを返したときの処理
+                console.error('フォーム送信がエラーとなりました。');
             }
-        }
-        return null;
-    }
+        };
+        xhr.send(formData);
+
+        // フォームの内容をクリア
+        document.getElementById('thread_name').value = '';
+        document.getElementById('comment').value = '';
+    });
     </script>
     <script>
         const darkModeButton = document.getElementById('darkModeButton');
